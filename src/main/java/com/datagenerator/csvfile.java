@@ -1,4 +1,5 @@
 package com.datagenerator;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -13,40 +14,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * Generates and inserts sample person data into a database using JavaFaker library.
- * This class implements a multithreaded approach to data generation and insertion,
- * utilizing multiple database connections for improved performance.
- * 
- * <p>Features:</p>
- * <ul>
- *   <li>Multi-threaded data generation and insertion</li>
- *   <li>Configurable batch processing</li>
- *   <li>Performance monitoring and progress tracking</li>
- *   <li>Transaction management per thread</li>
- * </ul>
- *
- * <p>The class reads database configuration from application.properties file and distributes
- * the workload across multiple threads for parallel processing.</p>
- *
- * @author Andre Byukusenge
- * @version 1.1
- * @since 2024-03-14
- */
-public class insert {
-    private static final int BATCH_SIZE = 5000; // Increased batch size
-    private static final int BASE_THREAD_COUNT = Runtime.getRuntime().availableProcessors();
-    private static final int ADDITIONAL_THREADS = 3;
-    private static final int THREAD_COUNT = BASE_THREAD_COUNT + ADDITIONAL_THREADS;
-    private static final long TOTAL_RECORDS = 10_000_000L; // Configurable total records (e.g., 50M)
-    private static final long RECORDS_PER_THREAD = TOTAL_RECORDS / THREAD_COUNT;
-    private static final int CSV_THREAD_COUNT = 7; // Increased from 4 to 7
-    private static final AtomicLong totalRecordsInserted = new AtomicLong(0);
-    private static long startTime;
-    private static final Scanner scanner = new Scanner(System.in);
-
+public class csvfile {
     /**
-     * Main method to orchestrate multi-threaded data generation and insertion.
+     * Main method to orchestrate multithreaded data generation and insertion.
      * Creates multiple database connections and threads to parallelize the work.
      *
      * <p>Process overview:</p>
@@ -62,6 +32,17 @@ public class insert {
      * @throws IOException If the properties file cannot be read
      * @throws SQLException If database operations fail
      */
+
+     private static final int BATCH_SIZE = 5000; // Increased batch size
+     private static final int BASE_THREAD_COUNT = Runtime.getRuntime().availableProcessors();
+     private static final int ADDITIONAL_THREADS = 3;
+     private static final int THREAD_COUNT = BASE_THREAD_COUNT + ADDITIONAL_THREADS;
+     private static final long TOTAL_RECORDS = 10_000_000L; // Configurable total records (e.g., 50M)
+     private static final long RECORDS_PER_THREAD = TOTAL_RECORDS / THREAD_COUNT;
+     private static final int CSV_THREAD_COUNT = 7; // Increased from 4 to 7
+     private static final AtomicLong totalRecordsInserted = new AtomicLong(0);
+     private static long startTime;
+     private static final Scanner scanner = new Scanner(System.in);
     public static void main(String[] args) {
         startTime = System.currentTimeMillis();
         
@@ -78,7 +59,6 @@ public class insert {
             return;
         }
 
-        // Get thread count from user
         int userThreadCount = 0;
         if (choice == 1 || choice == 2) {
             System.out.print("Enter number of threads (recommended: " + 
@@ -103,12 +83,9 @@ public class insert {
         CountDownLatch completionLatch;
         
         if (choice == 1) {
-            // Database only with user-specified threads
-            executorService = Executors.newFixedThreadPool(userThreadCount);
-            completionLatch = new CountDownLatch(userThreadCount);
-            long recordsPerThread = TOTAL_RECORDS / userThreadCount;
-            handleDatabaseOperations(executorService, connections, completionLatch, 
-                properties, userThreadCount, recordsPerThread);
+            System.out.println("Enter only two;");
+            return ;
+            
         } else if (choice == 2) {
             
             executorService = Executors.newFixedThreadPool(userThreadCount);
@@ -202,28 +179,6 @@ public class insert {
         }
     }
 
-    private static void handleDatabaseOperations(ExecutorService executorService, 
-            List<Connection> connections, CountDownLatch completionLatch, 
-            Properties properties, int threadCount, long recordsPerThread) {
-        String url = properties.getProperty("db.url");
-        String user = properties.getProperty("db.user");
-        String password = properties.getProperty("db.password");
-
-        try {
-            for (int i = 0; i < threadCount; i++) {
-                Connection conn = DriverManager.getConnection(url, user, password);
-                conn.setAutoCommit(false);
-                connections.add(conn);
-                executorService.submit(new DataGenerator(conn, recordsPerThread, 
-                    BATCH_SIZE, i, totalRecordsInserted, TOTAL_RECORDS, completionLatch));
-            }
-            System.out.printf("Started %d database threads, %d records per thread%n", 
-                threadCount, recordsPerThread);
-        } catch (SQLException e) {
-            System.out.println("Database connection error: " + e.getMessage());
-        }
-    }
-
     private static void handleCsvOperations(ExecutorService executorService, 
             CountDownLatch completionLatch, Properties properties, 
             int threadCount, long recordsPerThread) {
@@ -240,7 +195,7 @@ public class insert {
 
     private static void handleBothOperations(ExecutorService executorService, 
             List<Connection> connections, CountDownLatch completionLatch, Properties properties) {
-        handleDatabaseOperations(executorService, connections, completionLatch, properties, THREAD_COUNT, RECORDS_PER_THREAD);
+     
         handleCsvOperations(executorService, completionLatch, properties, CSV_THREAD_COUNT, TOTAL_RECORDS / CSV_THREAD_COUNT);
     }
 
@@ -261,3 +216,8 @@ public class insert {
         return totalRecordsInserted.get();
     }
 }
+
+
+
+
+
